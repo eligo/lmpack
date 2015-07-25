@@ -13,10 +13,10 @@
 
 typedef struct mp_buf {
     unsigned char *b;
-    size_t len, free;
+    size_t len, free, cur;//buf size, free size, cursor
 } mp_buf;
 
-struct mp_buf *mp_buf_new(lua_State *L) {
+struct mp_buf *mp_buf_new() {
     mp_buf *buf = (mp_buf*)malloc(sizeof(*buf));
     buf->b = NULL;
     buf->len = buf->free = 0;
@@ -224,5 +224,9 @@ void mp_encode_map(mp_buf *buf, int64_t n) {
 }
 
 void mp_encode_mp(mp_buf *buf, mp_buf *buf2) {
-
+    unsigned char type = 0xc4;
+    mp_buf_append(buf, &type, 1);                       // encode type
+    mp_encode_int(buf, buf2->len);
+    mp_buf_append(buf, buf2->b, buf2->len);             // encode content
 }
+
