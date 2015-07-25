@@ -44,6 +44,7 @@ void mp_encode_lua_type(lua_State *L, mp_buf *buf, int idx) {
         case LUA_TTABLE: //mp_encode_lua_table(L,buf,level); break;
         default: {// mp_encode_lua_null(L,buf); break; 
             //TODO 
+            luaL_error(L, "Unsupport ltype:%d", t);
            break;
         }
     }
@@ -54,7 +55,7 @@ void mp_encode_lua_type(lua_State *L, mp_buf *buf, int idx) {
 #define lua_pushunsigned(L, n) lua_pushnumber(L, n)
 #define mp_cur_need(_buf,_len) do { \
     if (_buf->len - _buf->cur < _len) { \
-        luaL_error(L, "Value less than expected"); \
+        luaL_error(L, "Value less than expected %s %d, %d, %d", __FILE__, __LINE__, _buf->len, _buf->cur); \
         return 0; \
     } \
 } while(0)
@@ -166,12 +167,13 @@ int mp_decode_int(mp_buf *c, int64_t *value, lua_State *L) {
 }
 
 int _unpack(lua_State *L) {
+    int i;
     int popn = 1;
     struct mp_buf_t *mp = (struct mp_buf_t *)luaL_checkudata(L, 1, LMPACK_NAME);
     struct mp_buf *c = mp->mp;
     if (lua_gettop(L) > 1)
         popn = luaL_checkinteger(L, 2);
-    for (;popn > 0; popn--) {
+    for (i=1; i <= popn; i++) {
         mp_cur_need(c, 1);
         unsigned char *p = c->b + c->cur;
         switch(p[0]) {
@@ -260,11 +262,11 @@ int _unpack(lua_State *L) {
             case 0xdd:  /* array 32 */
             case 0xde:  /* map 16 */
             case 0xdf:  /* map 32 */
-                luaL_error(L, "Unsupport Value Type %x", p[0]);
+                luaL_error(L, "Unsupport a Value Type %x", p[0]);
                 break;
             default:   {/* types that can't be idenitified by first byte value. */
                 int64_t value = 0;
-                if (0 == mp_decode_int(c, &value, L)) {
+                if (mp_decode_int(c, &value, L)) {
                     lua_pushnumber(L, value);
                 } else if ((p[0] & 0xe0) == 0xa0) {  /* fix raw */
                     size_t l = p[0] & 0x1f;
@@ -272,11 +274,11 @@ int _unpack(lua_State *L) {
                     lua_pushlstring(L,(char*)p+1,l);
                     mp_cur_consume(c,1+l);
                 } else if ((p[0] & 0xf0) == 0x90) {  /* fix map */
-                    luaL_error(L, "Unsupport Value Type %x", p[0]);
+                    luaL_error(L, "Unsupport b Value Type %x", p[0]);
                 } else if ((p[0] & 0xf0) == 0x80) {  /* fix map */
-                    luaL_error(L, "Unsupport Value Type %x", p[0]);
+                    luaL_error(L, "Unsupport c Value Type %x", p[0]);
                 } else {
-                    luaL_error(L, "Unsupport Value Type %x", p[0]);
+                    luaL_error(L, "Unsupport d Value Type %x", p[0]);
                 }
             }
         }
@@ -319,7 +321,7 @@ int _create(struct lua_State *L) {
 
 int luaopen_lmpack(struct lua_State *L) {
     struct luaL_reg driver[] = {
-        {"mp_create", _create},
+        {"create", _create},
         {NULL, NULL},
     };
     luaL_openlib(L, "LUA_MSGPACK", driver, 0);

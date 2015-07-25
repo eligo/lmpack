@@ -108,7 +108,6 @@ void mp_encode_double(mp_buf *buf, double d) {
 void mp_encode_int(mp_buf *buf, int64_t n) {
     unsigned char b[9];
     int enclen;
-
     if (n >= 0) {
         if (n <= 127) {
             b[0] = n & 0x7f;    /* positive fixnum */
