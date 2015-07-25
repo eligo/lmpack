@@ -1,5 +1,5 @@
 #include "lmpack.h"
-#define LMPACK_NAME "lua_msgpack"
+#define LMPACK_NAME "lua_msgpack" 
 
 void mp_encode_lua_type(lua_State *L, mp_buf *buf, int level) {
     int t = lua_type(L,-1);
