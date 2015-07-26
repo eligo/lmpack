@@ -20,6 +20,7 @@ struct mp_buf *mp_buf_new() {
     mp_buf *buf = (mp_buf*)malloc(sizeof(*buf));
     buf->b = NULL;
     buf->len = buf->free = 0;
+    buf->cur = 0;
     return buf;
 }
 

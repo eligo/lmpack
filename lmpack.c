@@ -36,9 +36,9 @@ void mp_encode_lua_type(lua_State *L, mp_buf *buf, int idx) {
             break;
         }
         case LUA_TUSERDATA: {
-            struct mp_buf *buf2 = (struct mp_buf *)luaL_checkudata(L, idx, LMPACK_NAME);
-            if (buf2 == NULL) luaL_error(L, "expected mpacket in params %d", idx);
-            mp_encode_mp(buf, buf2);
+            struct mp_buf_t *mp2 = (struct mp_buf_t *)luaL_checkudata(L, idx, LMPACK_NAME);
+            if (mp2 == NULL || !mp2->mp) luaL_error(L, "expected mpacket in params %d", idx);
+            mp_encode_mp(buf, mp2->mp);
             break;
         }
         case LUA_TTABLE: //mp_encode_lua_table(L,buf,level); break;
@@ -191,7 +191,8 @@ int _unpack(lua_State *L) {
                 break;
             case 0xc4: {
                 int64_t size = 0;
-                if (mp_decode_int(c, &size, L) != 0) luaL_error(L, "Error format mp_buf");
+                mp_cur_consume(c, 1);
+                if (mp_decode_int(c, &size, L) == 0) luaL_error(L, "Error format mp_buf");
                 if (size < 0)   luaL_error(L, "Error format mp_buf len");
                 mp_cur_need(c,size);//consuned in mp_decode_int
                 struct mp_buf_t *nmp = (struct mp_buf_t*)lua_newuserdata(L, sizeof(*nmp));
